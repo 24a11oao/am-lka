@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="cs">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>Budeš moje Valentýnka?</title>
+	<style>
+		:root{--bg:#1b0b17;--card:#2a0f1f;--accent:#ff4d6d;--accent2:#ff9bb3;--text:#fff}
+		html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+		body{background:radial-gradient(ellipse at 10% 10%, #47162a 0%, #12030a 40%, #070006 100%);color:var(--text);display:flex;align-items:center;justify-content:center}
+		.card{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.05));padding:36px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.6);text-align:center;max-width:520px;width:92%;position:relative}
+		h1{margin:0 0 8px;font-size:28px;letter-spacing:0.6px}
+		p.lead{margin:0 0 24px;color:rgba(255,255,255,0.85)}
+		.heart{width:120px;height:120px;margin:0 auto 18px;position:relative}
+		.heart:before,.heart:after{content:'';position:absolute;left:50%;top:0;width:60px;height:96px;background:var(--accent);border-radius:60px 60px 0 0;transform-origin:50% 100%}
+		.heart:before{transform:translateX(-50%) rotate(-45deg);}
+		.heart:after{transform:translateX(-50%) rotate(45deg);}
+		.actions{display:flex;gap:12px;justify-content:center;position:relative}
+		button{padding:12px 18px;border-radius:12px;border:0;cursor:pointer;font-size:16px}
+		.yes{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#22010b}
+		.no{background:transparent;border:2px solid rgba(255,255,255,0.12);color:var(--text);position:relative;transition:transform .45s cubic-bezier(.2,.9,.2,1);touch-action:manipulation}
+		.floating-heart{position:fixed;pointer-events:none;font-size:28px;will-change:transform;animation:floatUp 2.6s linear forwards}
+		@keyframes floatUp{0%{transform:translateY(0) scale(0.8);opacity:1}100%{transform:translateY(-260px) translateX(40px) scale(1.2);opacity:0}}
+		.overlay{position:fixed;inset:0;background:linear-gradient(0deg,rgba(8,2,6,0.9),rgba(8,2,6,0.6));display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .25s}
+		.overlay.show{opacity:1;pointer-events:auto}
+		.modal{background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(0,0,0,0.08));padding:28px;border-radius:16px;text-align:center;max-width:520px}
+		.modal h2{margin:0 0 8px}
+		.modal p{margin:0 0 12px}
+		.confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+		.confetti span{position:absolute;width:10px;height:18px;background:var(--accent);opacity:0.95;transform-origin:center;animation:confettiFall 2.2s linear forwards}
+		@keyframes confettiFall{0%{transform:translateY(-10vh) rotate(0) }100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+		footer{margin-top:14px;font-size:13px;color:rgba(255,255,255,0.5)}
+	</style>
+</head>
+<body>
+	<div class="card" role="main">
+		<div class="heart" aria-hidden="true"></div>
+		<h1>Budeš moje Valentýnka?</h1>
+		<p class="lead">Moje milá Kakálko amálko. Mám tě strašně mooooooooooc rád a<strong>MILUJUTĚĚĚ</strong> pokud chceš být mou Valentýnkou tak zkus chytit tlačítko <em>Ne</em> 😉</p>
+		<div class="actions">
+			<button class="yes" id="yesBtn">Ano!</button>
+			<button class="no" id="noBtn">Ne</button>
+		</div>
+		<footer>Uděláno s láskou pro tebe❤️ </footer>
+	</div>
+
+	<div class="overlay" id="overlay" aria-hidden="true">
+		<div class="modal" role="dialog" aria-label="Odpověď">
+			<h2>Jupí! 💖</h2>
+			<p>Miluju těěěě. Ikea date? na dortik? hihi:D </p>
+			<button id="closeBtn" class="yes">nezapomeň na lístky na Louise :D</button>
+		</div>
+		<div class="confetti" id="confetti"></div>
+	</div>
+
+	<script>
+		const yesBtn = document.getElementById('yesBtn');
+		const noBtn = document.getElementById('noBtn');
+		const overlay = document.getElementById('overlay');
+		const closeBtn = document.getElementById('closeBtn');
+		const confetti = document.getElementById('confetti');
+
+		// Vylepšené vyhýbání tlačítka 'Ne' — reaguje na přiblížení kurzoru a rychle uteče
+		noBtn.style.position = 'relative';
+		noBtn.style.transition = 'transform .45s cubic-bezier(.2,.9,.2,1)';
+		let lastMove = 0;
+
+		document.addEventListener('mousemove', (e) => {
+			const rect = noBtn.getBoundingClientRect();
+			const cx = rect.left + rect.width / 2;
+			const cy = rect.top + rect.height / 2;
+			const dx = e.clientX - cx;
+			const dy = e.clientY - cy;
+			const dist = Math.hypot(dx, dy);
+
+			// Pokud je kurzor příliš blízko, tlačítko uteče do protisměru s náhodnou silou
+			if (dist < 140) {
+				const angle = Math.atan2(dy, dx);
+				const moveX = -Math.cos(angle) * (160 + Math.random() * 140);
+				const moveY = -Math.sin(angle) * (80 + Math.random() * 120);
+				noBtn.style.transform = `translate(${moveX}px, ${moveY}px)`;
+				lastMove = Date.now();
+
+				// občasná drobná teleportace pro srandu
+				if (Math.random() < 0.12) {
+					setTimeout(() => {
+						noBtn.style.transform = `translate(${(Math.random() * 360 - 180)}px, ${(Math.random() * 240 - 120)}px)`;
+					}, 80 + Math.random() * 180);
+				}
+			} else if (Date.now() - lastMove > 900) {
+				// vrátit na původní místo pokud je kurzor daleko
+				noBtn.style.transform = '';
+			}
+		});
+
+		// Pokud se na tlačítko pokusíš kliknout, rychle zmizí ještě dál
+		noBtn.addEventListener('click', (e) => {
+			e.preventDefault();
+			const moveX = (Math.random() * 480 - 240);
+			const moveY = (Math.random() * 320 - 160);
+			noBtn.style.transform = `translate(${moveX}px, ${moveY}px)`;
+		});
+
+		// Podpora pro dotyková zařízení — při doteku tlačítko uteče
+		noBtn.addEventListener('touchstart', (e) => {
+			const moveX = (Math.random() * 380 - 190);
+			const moveY = (Math.random() * 260 - 130);
+			noBtn.style.transform = `translate(${moveX}px, ${moveY}px)`;
+		}, {passive: true});
+
+		// Po kliknutí na 'Ano' ukážeme překvapení
+		yesBtn.addEventListener('click', () => {
+			overlay.classList.add('show');
+			overlay.setAttribute('aria-hidden', 'false');
+			createConfetti(28);
+			floatHearts(14);
+		});
+
+		closeBtn.addEventListener('click', () => {
+			overlay.classList.remove('show');
+			overlay.setAttribute('aria-hidden', 'true');
+			confetti.innerHTML = '';
+		});
+
+		// Vytvoří confetti kusy
+		function createConfetti(count){
+			confetti.innerHTML = '';
+			for(let i=0;i<count;i++){
+				const s = document.createElement('span');
+				s.style.left = Math.random()*100 + '%';
+				s.style.top = (Math.random()*-30)+'vh';
+				s.style.background = ['#ff4d6d','#ff9bb3','#ffd1dc','#ffe07a'][Math.floor(Math.random()*4)];
+				s.style.transform = 'rotate('+ (Math.random()*360) +'deg)';
+				s.style.animationDelay = (Math.random()*0.6)+'s';
+				s.style.opacity = 0.95;
+				s.style.width = (6+Math.random()*10)+'px';
+				s.style.height = (10+Math.random()*16)+'px';
+				confetti.appendChild(s);
+			}
+		}
+
+		// Vytvoří plovoucí srdíčka pro video efekt
+		function floatHearts(n){
+			for(let i=0;i<n;i++){
+				const el = document.createElement('div');
+				el.className = 'floating-heart';
+				el.style.left = (50 + (Math.random()*160-80)) + 'px';
+				el.style.bottom = '20px';
+				el.style.color = ['#ff6b85','#ff9bb3','#ffd1dc'][Math.floor(Math.random()*3)];
+				el.style.opacity = 0.95;
+				el.textContent = '❤';
+				el.style.fontSize = (18 + Math.random()*26) + 'px';
+				el.style.animationDelay = (Math.random()*0.4)+'s';
+				document.body.appendChild(el);
+				setTimeout(()=> el.remove(), 2800);
+			}
+		}
+
+		// Malá UX doleva - přizpůsobení pro mobil
+		window.addEventListener('resize', ()=>{
+			noBtn.style.position = '';
+			noBtn.style.left = '';
+			noBtn.style.top = '';
+		});
+	</script>
+</body>
+</html>
+
